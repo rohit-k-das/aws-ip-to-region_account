@@ -1,5 +1,5 @@
 # Find Instance from Public IP
-Python script that finds the AWS account, region and instance_name/id for a provided IP across AWS accounts/profiles
+Python script that finds the AWS account, region and instance_name/id for IP across AWS accounts/profiles
 
 Pre-requisite:
 1. AWS account with console access (Access ID & Key) and appropriate permissions.
