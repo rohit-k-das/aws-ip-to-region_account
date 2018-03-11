@@ -1,7 +1,7 @@
 import boto3
 import os
 
-def account(profile,ip):
+def account(profile,ip,private=False):
 	session = boto3.session.Session(profile_name = profile)
 	regions = session.get_available_regions('ec2')
 
@@ -25,8 +25,13 @@ def account(profile,ip):
 				    if 'NetworkInterfaceId' in address:
 					print 'Network Interface Id: ' + address['NetworkInterfaceId']
                                     if 'PublicIp' in address:
-					print 'Public IP: ' + address['PublicIp']  
-				    return True
+					print 'Public IP: ' + address['PublicIp']
+				
+				    if private:
+					print  
+					break
+				    else:				    
+					return True
 
 				if ip == address['PublicIp']:
 				    print 'Profile:' + profile
@@ -69,6 +74,39 @@ def get_home_dir():
                 home_dir = field[5]
     return home_dir
 
+#Santize IP
+def sanitize_ip(ip):
+	numbers = ip.split('.')
+	if len(numbers) == 4:
+		for i in numbers:
+			try:
+				if not (int(i) >= 0 and int(i) < 256):
+					print 'ERROR: ' + ip + ' is not a valid IP address'
+					return False
+			except Exception, e:
+				if 'invalid literal for int()' in e.message:
+					print 'ERROR: ' + ip + ' is not an IP address'
+					return False
+	else:
+		return False
+
+	if ip == '0.0.0.0':
+		return False
+	elif ip == '255.255.255.255':
+		return False
+	
+	return True
+
+#Check if IP is private IP
+def check_private_ip(ip):
+	numbers = ip.split('.')
+	if numbers[0] == '10':
+		return True
+	elif numbers[0] == '192' and numbers[1] == '168':
+		return True
+	elif numbers[0] == '172' and int(numbers[1]) >= 16 and int(numbers[1]) <= 31:
+		return True
+
 def main():
     home_dir = get_home_dir()
     cred_file_path = home_dir + '/.aws/credentials'
@@ -82,16 +120,35 @@ def main():
 
     #Enter IP address to be searched across multiple accounts and regions
     ip = raw_input("Enter IP Address: ")
-    print "Searching " + ip + " accross accounts " + str(profile_names) + " ...."
-    for profile in profile_names:
-	try:
-		if account(profile,ip):
-        		break
-	except Exception,e:
-		if 'AccessDenied' in e.message:
-			print 'ERROR: Lack of permissions to access AWS IAM for account ' + profile + ' .'
-		else:
-                	print 'ERROR: ' + e.message
+    if sanitize_ip(ip):
+	ip = ip.split('.')
+	count = 0
+	for i in ip:
+		ip[count] = int(i)
+		count = count + 1
+	ip = '.'.join(['%s' % str(i) for i in ip])
+	
+	print "Searching " + ip + " accross accounts " + str(profile_names) + " ...."
+    	for profile in profile_names:
+		try:
+			if check_private_ip(ip):
+				account(profile,ip,check_private_ip(ip))
+		
+    			else:
+				if account(profile,ip,check_private_ip(ip)):
+        				break
+		except Exception,e:
+			if 'AccessDenied' in e.message:
+				print 'ERROR: Lack of permissions to access AWS IAM for account ' + profile + ' .'
+				print
+			else:
+                		print 'ERROR: ' + e.message
+				print
+    else:
+	exit(1)
+    
+	
+	
 
 if __name__ == '__main__':
     main()
