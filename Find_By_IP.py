@@ -84,8 +84,11 @@ def main():
     ip = raw_input("Enter IP Address: ")
     print "Searching " + ip + " accross accounts " + str(profile_names) + " ...."
     for profile in profile_names:
-        if account(profile,ip):
-        	break
+	try:
+		if account(profile,ip):
+        		break
+	except Exception,e:
+		print 'ERROR: Lack of permissions to access AWS IAM for account ' + profile + ' .'
 
 if __name__ == '__main__':
     main()
