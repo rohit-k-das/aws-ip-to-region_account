@@ -88,7 +88,10 @@ def main():
 		if account(profile,ip):
         		break
 	except Exception,e:
-		print 'ERROR: Lack of permissions to access AWS IAM for account ' + profile + ' .'
+		if 'AccessDenied' in e.message:
+			print 'ERROR: Lack of permissions to access AWS IAM for account ' + profile + ' .'
+		else:
+                	print 'ERROR: ' + e.message
 
 if __name__ == '__main__':
     main()
